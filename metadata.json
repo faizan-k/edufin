@@ -1,0 +1,6 @@
+{
+  "name": "EduFund: Children's Higher Education Financial Planner",
+  "description": "Interactive financial education planning dashboard with glide path asset allocation, staggered drawdown modeling, multi-destination inflation, and portfolio growth visualization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

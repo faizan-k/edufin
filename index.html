@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduFund: Children's Higher Education Financial Planner</title>
+  <meta name="description" content="Visual financial education planning dashboard with glide path asset allocation, staggered drawdown modeling, multi-destination inflation, and Chart.js portfolio growth visualization.">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    input[type=range] { cursor: pointer; }
+    /* Smooth transitions for theme switching */
+    html.dark { color-scheme: dark; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-sm">
+          <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="text-lg font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            EduFund
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80">Pro</span>
+          </span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
+        <a href="#inputs-section" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Inputs</a>
+        <a href="#chart-section" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Growth Chart</a>
+        <a href="#breakdown-section" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Schedule</a>
+        <a href="#milestones-section" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Milestones</a>
+        <a href="#methodology-section" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Methodology</a>
+      </nav>
+
+      <div class="flex items-center gap-2.5">
+        <!-- Currency Dropdown -->
+        <select id="currency-select" aria-label="Select Currency" class="text-xs font-semibold py-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-emerald-500">
+          <option value="AED">AED (د.إ)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="INR">INR (₹)</option>
+          <option value="CAD">CAD (C$)</option>
+        </select>
+
+        <!-- Standalone Export / Print -->
+        <button id="export-btn" title="Download Standalone HTML" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-center">
+          <i data-lucide="download" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" aria-label="Toggle theme" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-center">
+          <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    
+    <!-- Hero / Headline -->
+    <div class="space-y-2">
+      <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+        <span>Higher Education Financial Planner</span>
+        <span>•</span>
+        <span>Glide Path Asset Allocation</span>
+        <span>•</span>
+        <span>Staggered Drawdown Math</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        Plan, Protect, and Compound Your Children's University Fund
+      </h1>
+      <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
+        Model overseas degree inflation, living expense premiums, and portfolio accumulation. Leverage staggered drawdown compounding and automatic 3-year volatility protection.
+      </p>
+    </div>
+
+    <!-- Quick Metric Strip -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Target Required (at 18)</span>
+        <p id="metric-target-corpus" class="text-lg sm:text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">-</p>
+        <p id="metric-target-sub" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Saves +... via 5% compounding</p>
+      </div>
+      <div class="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Initial Funding Needed Today</span>
+        <p id="metric-initial-funding" class="text-lg sm:text-xl font-bold font-mono text-slate-900 dark:text-white mt-1 tabular-nums">-</p>
+        <p id="metric-initial-sub" class="text-[11px] font-medium mt-1">-</p>
+      </div>
+      <div class="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Required Monthly SIP</span>
+        <p id="metric-required-sip" class="text-lg sm:text-xl font-bold font-mono text-slate-900 dark:text-white mt-1 tabular-nums">-</p>
+        <p id="metric-sip-sub" class="text-[11px] font-medium mt-1">-</p>
+      </div>
+      <div class="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">100% Upfront Lump Sum (0 SIP)</span>
+        <p id="metric-upfront-lump" class="text-lg sm:text-xl font-bold font-mono text-purple-600 dark:text-purple-400 mt-1 tabular-nums">-</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Single deposit, zero monthly SIP</p>
+      </div>
+    </div>
+
+    <!-- Bottom Line Assessment Card -->
+    <div id="bottom-line-card" class="rounded-2xl p-6 sm:p-8 border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/25 transition-all">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-600"></i>
+            Bottom Line Assessment
+          </span>
+          <span id="plan-status-pill" class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+            Fully Funded Plan
+          </span>
+        </div>
+        <h2 id="bottom-line-title" class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white leading-snug">
+          Calculating...
+        </h2>
+        <p id="bottom-line-desc" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed"></p>
+      </div>
+    </div>
+
+    <!-- Explanatory Value Callouts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-start gap-3.5">
+        <div class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Staggered Drawdown Advantage</h3>
+            <span id="staggered-savings-pill" class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400"></span>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            Tuition needed for college Years 2, 3, and 4 remains invested in a safe 5% drawdown portfolio rather than liquidating day one, saving substantial capital.
+          </p>
+        </div>
+      </div>
+      <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-start gap-3.5">
+        <div class="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">3-Year Glide Path De-risking</h3>
+            <span class="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">At Age 15</span>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            Exactly 3 years prior to college, allocation automatically shifts from growth to a protected 7% rate to shield capital against sequence-of-returns equity drawdowns.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inputs Section -->
+    <div id="inputs-section" class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      
+      <!-- Child Inputs Card (with Multi-Child Tabs) -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Child Profiles</h2>
+            <span id="child-badge-count" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">2</span>
+          </div>
+          <button id="add-child-btn" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:underline">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+            Add Child
+          </button>
+        </div>
+
+        <!-- Child Tabs -->
+        <div id="child-tabs-container" class="flex items-center gap-2 overflow-x-auto pb-1">
+          <!-- Dynamic Tabs -->
+        </div>
+
+        <div class="space-y-5">
+          <!-- Name & Destination -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">Child's Name</label>
+              <input id="child-name" type="text" class="w-full text-sm py-2 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">Study Destination</label>
+              <select id="child-destination" class="w-full text-sm py-2 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-hidden">
+                <option value="UAE">UAE (Local) - 5% Infl, 1.0x</option>
+                <option value="US">United States - 8% Infl, 1.3x Living</option>
+                <option value="UK">United Kingdom - 6% Infl, 1.3x (3y)</option>
+                <option value="Canada">Canada - 6% Infl, 1.3x Living</option>
+                <option value="India">India - 9% Infl, 1.0x</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Current Age Slider -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="font-semibold text-slate-700 dark:text-slate-300">Current Age</span>
+              <span id="child-age-label" class="font-mono font-bold text-slate-900 dark:text-white"></span>
+            </div>
+            <input id="child-age" type="range" min="0" max="17" step="1" class="w-full accent-emerald-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+              <span>Newborn (0)</span>
+              <span>Primary (8)</span>
+              <span>High School (17)</span>
+            </div>
+          </div>
+
+          <!-- Cost Sliders: Grad & Post-Grad -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="font-semibold text-slate-700 dark:text-slate-300">Grad Annual Cost (Today)</span>
+                <span id="grad-cost-label" class="font-mono font-bold text-slate-900 dark:text-white"></span>
+              </div>
+              <input id="grad-cost" type="range" min="20000" max="300000" step="5000" class="w-full accent-emerald-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="font-semibold text-slate-700 dark:text-slate-300">Post-Grad Annual Cost</span>
+                <span id="postgrad-cost-label" class="font-mono font-bold text-slate-900 dark:text-white"></span>
+              </div>
+              <input id="postgrad-cost" type="range" min="0" max="350000" step="5000" class="w-full accent-emerald-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+            </div>
+          </div>
+
+          <!-- Degree Duration Controls -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">Graduation Duration</label>
+              <select id="grad-years" class="w-full text-sm py-2 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-medium">
+                <option value="3">3 Years (UK standard)</option>
+                <option value="4">4 Years (US/UAE/Canada standard)</option>
+                <option value="5">5 Years (Medicine/Architecture)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">Post-Graduation Duration</label>
+              <select id="postgrad-years" class="w-full text-sm py-2 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-medium">
+                <option value="0">0 Years (None)</option>
+                <option value="1">1 Year (Accelerated Master's)</option>
+                <option value="2">2 Years (Standard Master's / MBA)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Scholarship Aid Slider -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="font-semibold text-slate-700 dark:text-slate-300">Scholarship / Merit / Family Grant</span>
+              <span id="scholarship-label" class="font-mono font-bold text-emerald-600 dark:text-emerald-400"></span>
+            </div>
+            <input id="scholarship" type="range" min="0" max="60" step="5" class="w-full accent-emerald-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+          </div>
+
+          <!-- Remove Child Action Button -->
+          <div id="remove-child-container" class="pt-2 flex justify-end">
+            <button id="remove-child-btn" class="text-xs text-rose-500 hover:text-rose-600 font-medium flex items-center gap-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              Remove this child
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Capital & Strategy Card -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-6">
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+          Savings & Investment Strategy
+        </h2>
+
+        <!-- Existing Corpus Saved -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="font-semibold text-slate-700 dark:text-slate-300">Existing Education Corpus Saved</span>
+            <span id="existing-corpus-label" class="font-mono font-bold text-slate-900 dark:text-white"></span>
+          </div>
+          <input id="existing-corpus" type="range" min="0" max="1000000" step="10000" class="w-full accent-emerald-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+            <span>0</span>
+            <span>500,000</span>
+            <span>1,000,000+</span>
+          </div>
+        </div>
+
+        <!-- Monthly SIP -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="font-semibold text-slate-700 dark:text-slate-300">Monthly SIP Contribution</span>
+            <span id="monthly-sip-label" class="font-mono font-bold text-emerald-600 dark:text-emerald-400"></span>
+          </div>
+          <input id="monthly-sip" type="range" min="0" max="30000" step="500" class="w-full accent-emerald-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+            <span>0</span>
+            <span>15,000/mo</span>
+            <span>30,000+/mo</span>
+          </div>
+        </div>
+
+        <!-- SIP Cadence: Simple vs Step-up -->
+        <div>
+          <label class="block text-xs font-semibold mb-2 text-slate-700 dark:text-slate-300">SIP Cadence</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button id="sip-simple-btn" class="p-2.5 rounded-xl border text-xs font-semibold transition-all">
+              Simple SIP (Flat)
+            </button>
+            <button id="sip-stepup-btn" class="p-2.5 rounded-xl border text-xs font-semibold transition-all">
+              Step-up SIP (+3%/yr)
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1.5">
+            Step-up SIP increases annual contributions by 3% every year to align with salary increments.
+          </p>
+        </div>
+
+        <!-- Investment Strategy -->
+        <div>
+          <label class="block text-xs font-semibold mb-2 text-slate-700 dark:text-slate-300">Accumulation Phase Strategy</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button id="strat-agg-btn" class="p-2.5 rounded-xl border text-xs font-semibold transition-all">
+              Aggressive (12% Return)
+            </button>
+            <button id="strat-cons-btn" class="p-2.5 rounded-xl border text-xs font-semibold transition-all">
+              Conservative (8% Return)
+            </button>
+          </div>
+          <div class="mt-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs space-y-1">
+            <div class="flex justify-between text-slate-600 dark:text-slate-300">
+              <span>Glide Path (Age 15-18):</span>
+              <span class="font-mono font-semibold text-blue-600 dark:text-blue-400">7.0% per annum</span>
+            </div>
+            <div class="flex justify-between text-slate-600 dark:text-slate-300">
+              <span>Drawdown (During College):</span>
+              <span class="font-mono font-semibold text-emerald-600 dark:text-emerald-400">5.0% per annum</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div id="chart-section" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+      <div class="flex flex-wrap justify-between items-center gap-2">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="line-chart" class="w-5 h-5 text-emerald-600"></i>
+            Projected Portfolio Growth & College Outflows
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Green area: Portfolio accumulation with glide path de-risking • Red bars: Annual tuition outflows during university.
+          </p>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+            <span class="w-3 h-3 rounded-xs bg-emerald-600 inline-block"></span> Portfolio Balance
+          </span>
+          <span class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+            <span class="w-3 h-3 rounded-xs bg-rose-500 inline-block"></span> College Outflow
+          </span>
+        </div>
+      </div>
+
+      <div class="relative h-80 sm:h-96 w-full">
+        <canvas id="growthChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Breakdown Table Section -->
+    <div id="breakdown-section" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+      <div class="flex flex-wrap justify-between items-center gap-2">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="table" class="w-5 h-5 text-emerald-600"></i>
+            Staggered Annual Withdrawal Schedule
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Detailed breakdown of gross tuition, merit aid, net tuition, and discounted corpus needed back at college entry.
+          </p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+              <th class="py-2.5 px-3">Child</th>
+              <th class="py-2.5 px-3">Calendar Year</th>
+              <th class="py-2.5 px-3">Age</th>
+              <th class="py-2.5 px-3">Stage</th>
+              <th class="py-2.5 px-3 text-right">Gross Cost</th>
+              <th class="py-2.5 px-3 text-right">Merit Aid</th>
+              <th class="py-2.5 px-3 text-right">Net Withdrawal</th>
+              <th class="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">Discounted to Matriculation (5%)</th>
+            </tr>
+          </thead>
+          <tbody id="breakdown-tbody" class="divide-y divide-slate-100 dark:divide-slate-800">
+            <!-- Dynamic rows -->
+          </tbody>
+          <tfoot id="breakdown-tfoot" class="border-t-2 border-slate-300 dark:border-slate-700 font-bold">
+            <!-- Dynamic totals -->
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Milestones Section -->
+    <div id="milestones-section" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <i data-lucide="calendar" class="w-5 h-5 text-emerald-600"></i>
+        Personalized Education Milestones
+      </h2>
+      <div id="milestones-container" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Dynamic Milestones -->
+      </div>
+    </div>
+
+    <!-- Methodology & Explainer Section -->
+    <div id="methodology-section" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <i data-lucide="help-circle" class="w-5 h-5 text-emerald-600"></i>
+        Planning Methodology & Mathematical Principles
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs leading-relaxed text-slate-600 dark:text-slate-300 pt-2">
+        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
+          <h3 class="font-bold text-slate-900 dark:text-white text-sm">1. Staggered Drawdown Math</h3>
+          <p>
+            Traditional planners erroneously sum all 4 years of tuition as if needed upfront. In reality, tuition for year 4 is only withdrawn 3 years after college begins. By keeping later funds invested in high-grade liquid bonds at 5%, the required matriculation corpus is discounted by:
+          </p>
+          <code class="block p-2 bg-slate-100 dark:bg-slate-900 rounded font-mono text-[11px] text-emerald-600">
+            PV = NetCost / (1 + 0.05)^k
+          </code>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
+          <h3 class="font-bold text-slate-900 dark:text-white text-sm">2. 3-Year Glide Path</h3>
+          <p>
+            Equities offer 12% long-term historical returns but carry severe sequence-of-returns risk if a bear market strikes right when your child turns 17. The 3-Year Glide Path automatically shifts assets into capital preservation (7% return) at age 15 to lock in gains.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
+          <h3 class="font-bold text-slate-900 dark:text-white text-sm">3. Destination Inflation & Living</h3>
+          <p>
+            Education inflation outpaces CPI inflation (historically 6-9%). When sending children to the US, UK, or Canada, foreign exchange and overseas living costs add a 30% premium. We model both factor combinations dynamically.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // State management
+    const state = {
+      currency: 'AED',
+      activeChildId: 'child-1',
+      children: [
+        {
+          id: 'child-1',
+          name: 'Ayaan',
+          currentAge: 8,
+          collegeStartAge: 18,
+          gradYears: 4,
+          postGradYears: 2,
+          gradAnnualCostToday: 80000,
+          postGradAnnualCostToday: 100000,
+          destination: 'UAE',
+          scholarshipPercent: 15
+        },
+        {
+          id: 'child-2',
+          name: 'Zara',
+          currentAge: 5,
+          collegeStartAge: 18,
+          gradYears: 4,
+          postGradYears: 2,
+          gradAnnualCostToday: 110000,
+          postGradAnnualCostToday: 130000,
+          destination: 'US',
+          scholarshipPercent: 20
+        }
+      ],
+      existingCorpus: 150000,
+      monthlySIP: 4500,
+      sipType: 'simple',
+      sipStepUpPercent: 3,
+      strategy: 'Aggressive',
+      accumulationReturnPercent: 12,
+      glidePathReturnPercent: 7,
+      drawdownReturnPercent: 5
+    };
+
+    const PRESETS = {
+      UAE: { name: 'UAE (Local)', infl: 0.05, mult: 1.0, gradYears: 4 },
+      US: { name: 'United States', infl: 0.08, mult: 1.3, gradYears: 4 },
+      UK: { name: 'United Kingdom', infl: 0.06, mult: 1.3, gradYears: 3 },
+      Canada: { name: 'Canada', infl: 0.06, mult: 1.3, gradYears: 4 },
+      India: { name: 'India', infl: 0.09, mult: 1.0, gradYears: 4 }
+    };
+
+    const CURRENCY_SYMBOLS = {
+      AED: 'AED',
+      USD: '$',
+      EUR: '€',
+      GBP: '£',
+      INR: '₹',
+      CAD: 'CA$'
+    };
+
+    let chartInstance = null;
+    let isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    function getCurrencySymbol() {
+      return CURRENCY_SYMBOLS[state.currency] || state.currency;
+    }
+
+    function formatMoney(amount) {
+      return getCurrencySymbol() + ' ' + Math.round(amount).toLocaleString('en-US');
+    }
+
+    function updateTheme() {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+        const icon = document.getElementById('theme-icon');
+        if (icon) icon.setAttribute('data-lucide', 'sun');
+      } else {
+        document.documentElement.classList.remove('dark');
+        const icon = document.getElementById('theme-icon');
+        if (icon) icon.setAttribute('data-lucide', 'moon');
+      }
+      if (window.lucide) window.lucide.createIcons();
+      if (chartInstance) renderChart();
+    }
+
+    function getActiveChild() {
+      return state.children.find(c => c.id === state.activeChildId) || state.children[0];
+    }
+
+    // Mathematical Calculation Engine
+    function calculate() {
+      const currentYear = new Date().getFullYear();
+      let allFlows = [];
+      let totalCorpusNeededAt18 = 0;
+      let totalCrudeSum = 0;
+
+      // Calculate cash flows for each child
+      const childSummaries = state.children.map(child => {
+        const preset = PRESETS[child.destination] || PRESETS.UAE;
+        const yearsTo18 = Math.max(0, child.collegeStartAge - child.currentAge);
+        const totalDegreeYears = child.gradYears + child.postGradYears;
+        let flows = [];
+        let childTarget = 0;
+        let childCrude = 0;
+
+        for (let k = 0; k < totalDegreeYears; k++) {
+          const isGrad = k < child.gradYears;
+          const stage = isGrad ? `Graduation Yr ${k + 1}` : `Post-Grad Yr ${k - child.gradYears + 1}`;
+          const yearIndex = yearsTo18 + k;
+          const calYear = currentYear + yearIndex;
+          const childAge = child.currentAge + yearIndex;
+
+          const baseCost = isGrad ? child.gradAnnualCostToday : child.postGradAnnualCostToday;
+          const grossCost = baseCost * Math.pow(1 + preset.infl, yearIndex) * preset.mult;
+          const scholarship = grossCost * (child.scholarshipPercent / 100);
+          const net = Math.max(0, grossCost - scholarship);
+          const discTo18 = net / Math.pow(1 + state.drawdownReturnPercent / 100, k);
+
+          flows.push({
+            childId: child.id,
+            childName: child.name,
+            yearIndex,
+            calYear,
+            childAge,
+            stage,
+            grossCost,
+            scholarship,
+            net,
+            discTo18
+          });
+
+          childTarget += discTo18;
+          childCrude += net;
+        }
+
+        totalCorpusNeededAt18 += childTarget;
+        totalCrudeSum += childCrude;
+        allFlows.push(...flows);
+
+        return {
+          child,
+          preset,
+          yearsTo18,
+          totalDegreeYears,
+          childTarget,
+          childCrude,
+          savings: childCrude - childTarget
+        };
+      });
+
+      // Sort all cash flows chronologically
+      allFlows.sort((a, b) => a.yearIndex - b.yearIndex);
+
+      // Determine timeline horizon
+      let maxHorizon = 5;
+      state.children.forEach(c => {
+        const h = Math.max(0, c.collegeStartAge - c.currentAge) + c.gradYears + c.postGradYears + 1;
+        if (h > maxHorizon) maxHorizon = h;
+      });
+
+      // Timeline projection
+      let balance = state.existingCorpus;
+      let monthlySIP = state.monthlySIP;
+      let timeline = [];
+
+      for (let y = 0; y <= maxHorizon; y++) {
+        const calYear = currentYear + y;
+        
+        // Children statuses at year y
+        const statuses = state.children.map(c => {
+          const age = c.currentAge + y;
+          const totalYears = c.gradYears + c.postGradYears;
+          let status = 'school';
+          if (age >= c.collegeStartAge + totalYears) status = 'graduated';
+          else if (age >= c.collegeStartAge) status = 'college';
+          else if (c.collegeStartAge - age <= 3) status = 'glide';
+          return { name: c.name, age, status };
+        });
+
+        // Sum net outflows across all children for year y
+        const out = allFlows
+          .filter(f => f.yearIndex === y)
+          .reduce((sum, f) => sum + f.net, 0);
+
+        // Blended return rate
+        const hasCollege = statuses.some(s => s.status === 'college');
+        const hasGlide = statuses.some(s => s.status === 'glide');
+        const allGrad = statuses.every(s => s.status === 'graduated');
+
+        let rate = state.accumulationReturnPercent / 100;
+        if (allGrad) rate = state.drawdownReturnPercent / 100;
+        else if (hasCollege) rate = state.drawdownReturnPercent / 100;
+        else if (hasGlide) rate = state.glidePathReturnPercent / 100;
+
+        const annualSIP = allGrad ? 0 : monthlySIP * 12;
+        const netInvest = Math.max(0, balance - out);
+        const growth = (netInvest + annualSIP * 0.5) * rate;
+        let endBal = netInvest + annualSIP + growth;
+        if (balance < out) {
+          endBal = Math.max(0, balance + annualSIP - out);
+        }
+
+        timeline.push({
+          y,
+          calYear,
+          statuses,
+          balance: endBal,
+          out,
+          rate,
+          annualSIP
+        });
+
+        balance = endBal;
+        if (state.sipType === 'stepup' && !allGrad) {
+          monthlySIP *= (1 + state.sipStepUpPercent / 100);
+        }
+      }
+
+      const staggeredSavingsTotal = totalCrudeSum - totalCorpusNeededAt18;
+
+      // Mathematical Solver Algorithms
+      const accumRate = state.accumulationReturnPercent / 100;
+      const glideRate = state.glidePathReturnPercent / 100;
+      const drawdownRate = state.drawdownReturnPercent / 100;
+      const glideYears = 3;
+
+      function simulateTrajectory(initialCorpus, initialSIP) {
+        let bal = initialCorpus;
+        let sip = initialSIP;
+        let minBal = bal;
+        for (let yr = 0; yr <= maxHorizon; yr++) {
+          const stats = state.children.map(c => {
+            const age = c.currentAge + yr;
+            const totY = c.gradYears + c.postGradYears;
+            let status = 'school';
+            if (age >= c.collegeStartAge + totY) status = 'graduated';
+            else if (age >= c.collegeStartAge) status = 'college';
+            else if (c.collegeStartAge - age <= glideYears) status = 'glide';
+            return { status };
+          });
+          const annualOut = allFlows.filter(f => f.yearIndex === yr).reduce((s, f) => s + f.net, 0);
+          const hasCol = stats.some(s => s.status === 'college');
+          const hasGli = stats.some(s => s.status === 'glide');
+          const allG = stats.every(s => s.status === 'graduated');
+
+          let r = accumRate;
+          if (allG || hasCol) r = drawdownRate;
+          else if (hasGli) r = glideRate;
+
+          const annSIP = allG ? 0 : sip * 12;
+          const netInv = Math.max(0, bal - annualOut);
+          const grw = (netInv + annSIP * 0.5) * r;
+          let endB = netInv + annSIP + grw;
+          if (bal < annualOut) {
+            endB = bal + annSIP - annualOut;
+          }
+          if (endB < minBal) minBal = endB;
+          bal = endB;
+          if (state.sipType === 'stepup' && !allG) {
+            sip *= (1 + state.sipStepUpPercent / 100);
+          }
+        }
+        return { minBal, endBal: bal };
+      }
+
+      function solveReqInitialLumpsum() {
+        let low = 0, high = 25000000, ans = 0;
+        for (let iter = 0; iter < 40; iter++) {
+          const mid = (low + high) / 2;
+          const { minBal } = simulateTrajectory(mid, state.monthlySIP);
+          if (minBal >= 0) { ans = mid; high = mid; } else { low = mid; }
+        }
+        return Math.round(ans);
+      }
+
+      function solveReqMonthlySIP() {
+        let low = 0, high = 500000, ans = 0;
+        for (let iter = 0; iter < 40; iter++) {
+          const mid = (low + high) / 2;
+          const { minBal } = simulateTrajectory(state.existingCorpus, mid);
+          if (minBal >= 0) { ans = mid; high = mid; } else { low = mid; }
+        }
+        return Math.round(ans);
+      }
+
+      function solve100PercentUpfrontLumpSum() {
+        let low = 0, high = 25000000, ans = 0;
+        for (let iter = 0; iter < 40; iter++) {
+          const mid = (low + high) / 2;
+          const { minBal } = simulateTrajectory(mid, 0);
+          if (minBal >= 0) { ans = mid; high = mid; } else { low = mid; }
+        }
+        return Math.round(ans);
+      }
+
+      const reqInitialLumpsumWithCurrentSIP = solveReqInitialLumpsum();
+      const reqMonthlySIPWithExistingCorpus = solveReqMonthlySIP();
+      const reqLumpSumWithZeroSIP = solve100PercentUpfrontLumpSum();
+      const currentSim = simulateTrajectory(state.existingCorpus, state.monthlySIP);
+      const isFullyFunded = currentSim.minBal >= 0;
+      const initialLumpSumGap = Math.max(0, reqInitialLumpsumWithCurrentSIP - state.existingCorpus);
+      const monthlySIPGap = Math.max(0, reqMonthlySIPWithExistingCorpus - state.monthlySIP);
+
+      return {
+        childSummaries,
+        allFlows,
+        totalCorpusNeededAt18,
+        totalCrudeSum,
+        staggeredSavingsTotal,
+        timeline,
+        finalBalance: balance,
+        minBalanceInTimeline: currentSim.minBal,
+        isFullyFunded,
+        reqInitialLumpsumWithCurrentSIP,
+        reqMonthlySIPWithExistingCorpus,
+        reqLumpSumWithZeroSIP,
+        initialLumpSumGap,
+        monthlySIPGap
+      };
+    }
+
+    function renderChildTabs() {
+      const container = document.getElementById('child-tabs-container');
+      const activeChild = getActiveChild();
+
+      container.innerHTML = state.children.map((c, idx) => `
+        <button onclick="selectChild('${c.id}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors ${
+          c.id === activeChild.id
+            ? 'bg-emerald-600 text-white shadow-xs'
+            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+        }">
+          ${c.name || 'Child ' + (idx + 1)} (${c.currentAge}y)
+        </button>
+      `).join('');
+
+      document.getElementById('child-badge-count').textContent = state.children.length;
+
+      const removeBtnContainer = document.getElementById('remove-child-container');
+      if (state.children.length > 1) {
+        removeBtnContainer.classList.remove('hidden');
+      } else {
+        removeBtnContainer.classList.add('hidden');
+      }
+    }
+
+    function renderUI() {
+      const res = calculate();
+      const child = getActiveChild();
+
+      renderChildTabs();
+
+      // Child inputs
+      document.getElementById('child-name').value = child.name;
+      document.getElementById('child-destination').value = child.destination;
+      document.getElementById('child-age').value = child.currentAge;
+      document.getElementById('child-age-label').textContent = child.currentAge + ' years';
+
+      document.getElementById('grad-cost').value = child.gradAnnualCostToday;
+      document.getElementById('grad-cost-label').textContent = formatMoney(child.gradAnnualCostToday);
+
+      document.getElementById('postgrad-cost').value = child.postGradAnnualCostToday;
+      document.getElementById('postgrad-cost-label').textContent = formatMoney(child.postGradAnnualCostToday);
+
+      document.getElementById('grad-years').value = child.gradYears;
+      document.getElementById('postgrad-years').value = child.postGradYears;
+
+      document.getElementById('scholarship').value = child.scholarshipPercent;
+      document.getElementById('scholarship-label').textContent = child.scholarshipPercent + '%';
+
+      // Investment inputs
+      document.getElementById('existing-corpus').value = state.existingCorpus;
+      document.getElementById('existing-corpus-label').textContent = formatMoney(state.existingCorpus);
+
+      document.getElementById('monthly-sip').value = state.monthlySIP;
+      document.getElementById('monthly-sip-label').textContent = formatMoney(state.monthlySIP) + '/mo';
+
+      // Buttons active states
+      const sipSimple = document.getElementById('sip-simple-btn');
+      const sipStep = document.getElementById('sip-stepup-btn');
+      sipSimple.className = 'p-2.5 rounded-xl border text-xs font-semibold transition-all ' +
+        (state.sipType === 'simple'
+          ? 'bg-emerald-100 dark:bg-emerald-950/70 border-emerald-600 text-emerald-800 dark:text-emerald-300'
+          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300');
+      sipStep.className = 'p-2.5 rounded-xl border text-xs font-semibold transition-all ' +
+        (state.sipType === 'stepup'
+          ? 'bg-emerald-100 dark:bg-emerald-950/70 border-emerald-600 text-emerald-800 dark:text-emerald-300'
+          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300');
+
+      const stratAgg = document.getElementById('strat-agg-btn');
+      const stratCons = document.getElementById('strat-cons-btn');
+      stratAgg.className = 'p-2.5 rounded-xl border text-xs font-semibold transition-all ' +
+        (state.strategy === 'Aggressive'
+          ? 'bg-emerald-100 dark:bg-emerald-950/70 border-emerald-600 text-emerald-800 dark:text-emerald-300'
+          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300');
+      stratCons.className = 'p-2.5 rounded-xl border text-xs font-semibold transition-all ' +
+        (state.strategy === 'Conservative'
+          ? 'bg-blue-100 dark:bg-blue-950/70 border-blue-600 text-blue-800 dark:text-blue-300'
+          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300');
+
+      // Metric strip
+      document.getElementById('metric-target-corpus').textContent = formatMoney(res.totalCorpusNeededAt18);
+      document.getElementById('metric-target-sub').textContent = `Gross: ${formatMoney(res.totalCrudeSum)} (Saves +${formatMoney(res.staggeredSavingsTotal)})`;
+
+      document.getElementById('metric-initial-funding').textContent = formatMoney(res.reqInitialLumpsumWithCurrentSIP);
+      const initialSub = document.getElementById('metric-initial-sub');
+      if (res.initialLumpSumGap > 0) {
+        initialSub.className = 'text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-1';
+        initialSub.textContent = `Current: ${formatMoney(state.existingCorpus)} (Gap: -${formatMoney(res.initialLumpSumGap)})`;
+      } else {
+        initialSub.className = 'text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1';
+        initialSub.textContent = `Current: ${formatMoney(state.existingCorpus)} (Fully Covered)`;
+      }
+
+      document.getElementById('metric-required-sip').textContent = formatMoney(res.reqMonthlySIPWithExistingCorpus) + '/mo';
+      const sipSub = document.getElementById('metric-sip-sub');
+      if (res.monthlySIPGap > 0) {
+        sipSub.className = 'text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-1';
+        sipSub.textContent = `Current: ${formatMoney(state.monthlySIP)}/mo (+${formatMoney(res.monthlySIPGap)} needed)`;
+      } else {
+        sipSub.className = 'text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1';
+        sipSub.textContent = `Current: ${formatMoney(state.monthlySIP)}/mo (Fully Covered)`;
+      }
+
+      document.getElementById('metric-upfront-lump').textContent = formatMoney(res.reqLumpSumWithZeroSIP);
+
+      // Bottom line banner
+      const card = document.getElementById('bottom-line-card');
+      const pill = document.getElementById('plan-status-pill');
+      const names = state.children.map(c => c.name).filter(Boolean).join(' and ') || 'your children';
+
+      if (res.isFullyFunded) {
+        card.className = 'rounded-2xl p-6 sm:p-8 border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/25 transition-all';
+        pill.className = 'text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700';
+        pill.textContent = 'Fully Funded Plan';
+
+        document.getElementById('bottom-line-title').innerHTML =
+          `To fund <span class="text-emerald-600 dark:text-emerald-400 font-bold">${names}</span>'s higher education (Total Required: <span class="font-mono font-bold">${formatMoney(res.totalCorpusNeededAt18)}</span>), your initial corpus of <span class="font-mono font-bold">${formatMoney(state.existingCorpus)}</span> paired with your monthly SIP of <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">${formatMoney(state.monthlySIP)}</span> is projected to provide complete funding with a residual surplus of <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">${formatMoney(res.finalBalance)}</span> at graduation.`;
+
+        document.getElementById('bottom-line-desc').innerHTML =
+          `Total future education cost is ${formatMoney(res.totalCrudeSum)}. Staggered drawdown compounding saves you ${formatMoney(res.staggeredSavingsTotal)} by keeping later tuition payments invested at 5% safe return until needed. Alternatively, an upfront lump sum today of ${formatMoney(res.reqLumpSumWithZeroSIP)} covers all degree years with zero monthly SIP.`;
+      } else {
+        const shortfallAmount = Math.abs(res.minBalanceInTimeline);
+        card.className = 'rounded-2xl p-6 sm:p-8 border border-amber-300 dark:border-amber-700/80 bg-amber-50/80 dark:bg-amber-950/30 transition-all';
+        pill.className = 'text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/80 dark:text-amber-200 border border-amber-300 dark:border-amber-700';
+        pill.textContent = `Funding Gap: ${formatMoney(shortfallAmount)} Shortfall`;
+
+        document.getElementById('bottom-line-title').innerHTML =
+          `To fund <span class="text-slate-900 dark:text-white font-bold">${names}</span>'s higher education (Total Required: <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">${formatMoney(res.totalCorpusNeededAt18)}</span>), your current plan faces a projected shortfall of <span class="font-mono text-rose-600 dark:text-rose-400 font-bold">${formatMoney(shortfallAmount)}</span> in later college years.`;
+
+        document.getElementById('bottom-line-desc').innerHTML =
+          `<div class="space-y-2 mt-2">
+            <p class="font-semibold text-slate-800 dark:text-slate-200">To bridge this gap and ensure debt-free graduation, you can choose from these options:</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <div class="p-3 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-amber-200 dark:border-amber-800/80">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">Option A: Increase Initial Funding</span>
+                <p class="text-xs text-slate-700 dark:text-slate-300 mt-1">Deposit an initial lump sum of <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">${formatMoney(res.reqInitialLumpsumWithCurrentSIP)}</span> today (add <span class="font-mono font-bold">${formatMoney(res.initialLumpSumGap)}</span>) alongside your current ${formatMoney(state.monthlySIP)}/mo SIP.</p>
+              </div>
+              <div class="p-3 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-amber-200 dark:border-amber-800/80">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">Option B: Increase Monthly SIP</span>
+                <p class="text-xs text-slate-700 dark:text-slate-300 mt-1">Keep your initial ${formatMoney(state.existingCorpus)} corpus and increase your monthly SIP to <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">${formatMoney(res.reqMonthlySIPWithExistingCorpus)}/mo</span> (+${formatMoney(res.monthlySIPGap)}/mo).</p>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 pt-1">Or choose <strong>Option C (100% Upfront)</strong>: A single lump sum today of <span class="font-mono font-semibold">${formatMoney(res.reqLumpSumWithZeroSIP)}</span> fully funds all degrees with zero ongoing monthly contributions.</p>
+          </div>`;
+      }
+
+      document.getElementById('staggered-savings-pill').textContent = 'Save ' + formatMoney(res.staggeredSavingsTotal);
+
+      // Breakdown Table
+      const tbody = document.getElementById('breakdown-tbody');
+      tbody.innerHTML = res.allFlows.map(f => `
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${f.childName}</td>
+          <td class="py-2.5 px-3 font-mono text-slate-600 dark:text-slate-300">${f.calYear} (+${f.yearIndex}y)</td>
+          <td class="py-2.5 px-3 font-mono">${f.childAge}y</td>
+          <td class="py-2.5 px-3 font-medium text-slate-700 dark:text-slate-300">${f.stage}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-400">${formatMoney(f.grossCost)}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-slate-400">-${formatMoney(f.scholarship)}</td>
+          <td class="py-2.5 px-3 text-right font-mono font-semibold text-slate-900 dark:text-white">${formatMoney(f.net)}</td>
+          <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">${formatMoney(f.discTo18)}</td>
+        </tr>
+      `).join('');
+
+      const tfoot = document.getElementById('breakdown-tfoot');
+      const totalGross = res.allFlows.reduce((s, f) => s + f.grossCost, 0);
+      const totalAid = res.allFlows.reduce((s, f) => s + f.scholarship, 0);
+      const totalNet = res.allFlows.reduce((s, f) => s + f.net, 0);
+      tfoot.innerHTML = `
+        <tr class="bg-slate-50 dark:bg-slate-800/80">
+          <td colspan="4" class="py-3 px-3 text-slate-900 dark:text-white">Plan Totals Across All Children</td>
+          <td class="py-3 px-3 text-right font-mono text-slate-700 dark:text-slate-300">${formatMoney(totalGross)}</td>
+          <td class="py-3 px-3 text-right font-mono text-slate-500">-${formatMoney(totalAid)}</td>
+          <td class="py-3 px-3 text-right font-mono text-slate-900 dark:text-white">${formatMoney(totalNet)}</td>
+          <td class="py-3 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400 text-sm">${formatMoney(res.totalCorpusNeededAt18)}</td>
+        </tr>
+      `;
+
+      // Milestones
+      const currentYear = new Date().getFullYear();
+      let milestoneItems = [];
+
+      state.children.forEach(c => {
+        const age15Year = currentYear + Math.max(0, 15 - c.currentAge);
+        const age18Year = currentYear + Math.max(0, 18 - c.currentAge);
+        const gradYear = currentYear + Math.max(0, 18 + c.gradYears + c.postGradYears - c.currentAge);
+
+        milestoneItems.push({
+          childName: c.name,
+          title: `${c.name}: Age 15 Glide Path De-risking`,
+          year: age15Year,
+          tag: '3-Year Glide Path',
+          desc: 'Asset allocation automatically shifts to 7% capital preservation to protect accumulated corpus.',
+          color: 'blue'
+        });
+
+        milestoneItems.push({
+          childName: c.name,
+          title: `${c.name}: Age 18 Matriculation in ${c.destination}`,
+          year: age18Year,
+          tag: 'College Matriculation',
+          desc: `Higher education begins. Staggered drawdown starts with unwithdrawn tuition earning 5% safe return.`,
+          color: 'emerald'
+        });
+
+        milestoneItems.push({
+          childName: c.name,
+          title: `${c.name}: Complete Graduation`,
+          year: gradYear,
+          tag: 'Degree Completed',
+          desc: `Full degree completed 100% debt-free!`,
+          color: 'purple'
+        });
+      });
+
+      milestoneItems.sort((a, b) => a.year - b.year);
+
+      const mContainer = document.getElementById('milestones-container');
+      mContainer.innerHTML = milestoneItems.map(m => `
+        <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-xs flex justify-between items-start gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 dark:text-white">${m.title}</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-${m.color}-100 dark:bg-${m.color}-950/80 text-${m.color}-700 dark:text-${m.color}-300 font-semibold">${m.tag}</span>
+            </div>
+            <p class="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">${m.desc}</p>
+          </div>
+          <span class="font-mono text-sm font-bold text-slate-900 dark:text-white shrink-0">${m.year}</span>
+        </div>
+      `).join('');
+
+      renderChart();
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function renderChart() {
+      const res = calculate();
+      const canvas = document.getElementById('growthChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      const labels = res.timeline.map(t => `${t.calYear} (Yr +${t.y})`);
+      const balances = res.timeline.map(t => Math.round(t.balance));
+      const outflows = res.timeline.map(t => Math.round(t.out));
+
+      const textColor = isDarkMode ? '#94A3B8' : '#64748B';
+      const gridColor = isDarkMode ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.8)';
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Portfolio Balance',
+              data: balances,
+              borderColor: '#059669',
+              backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(5, 150, 105, 0.15)',
+              borderWidth: 2.5,
+              fill: true,
+              tension: 0.35,
+              pointRadius: 3,
+              pointHoverRadius: 6,
+            },
+            {
+              label: 'College Outflows',
+              data: outflows,
+              type: 'bar',
+              backgroundColor: 'rgba(239, 68, 68, 0.7)',
+              borderRadius: 4,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              labels: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.dataset.label}: ${formatMoney(context.parsed.y)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: textColor, font: { family: 'JetBrains Mono', size: 10 } },
+              grid: { color: gridColor }
+            },
+            y: {
+              ticks: {
+                color: textColor,
+                font: { family: 'JetBrains Mono', size: 10 },
+                callback: function(val) { return formatMoney(val); }
+              },
+              grid: { color: gridColor }
+            }
+          }
+        }
+      });
+    }
+
+    // Child Selection & Manipulation
+    function selectChild(childId) {
+      state.activeChildId = childId;
+      renderUI();
+    }
+
+    document.getElementById('add-child-btn').onclick = () => {
+      const newId = 'child-' + (Date.now());
+      const num = state.children.length + 1;
+      state.children.push({
+        id: newId,
+        name: 'Child ' + num,
+        currentAge: 3,
+        collegeStartAge: 18,
+        gradYears: 4,
+        postGradYears: 2,
+        gradAnnualCostToday: 90000,
+        postGradAnnualCostToday: 110000,
+        destination: 'US',
+        scholarshipPercent: 15
+      });
+      state.activeChildId = newId;
+      renderUI();
+    };
+
+    document.getElementById('remove-child-btn').onclick = () => {
+      if (state.children.length <= 1) return;
+      state.children = state.children.filter(c => c.id !== state.activeChildId);
+      state.activeChildId = state.children[0].id;
+      renderUI();
+    };
+
+    // Event Listeners for Child Inputs
+    document.getElementById('child-name').oninput = (e) => {
+      const child = getActiveChild();
+      child.name = e.target.value;
+      renderUI();
+    };
+
+    document.getElementById('child-destination').onchange = (e) => {
+      const child = getActiveChild();
+      child.destination = e.target.value;
+      child.gradYears = PRESETS[e.target.value].gradYears;
+      renderUI();
+    };
+
+    document.getElementById('child-age').oninput = (e) => {
+      const child = getActiveChild();
+      child.currentAge = Number(e.target.value);
+      renderUI();
+    };
+
+    document.getElementById('grad-cost').oninput = (e) => {
+      const child = getActiveChild();
+      child.gradAnnualCostToday = Number(e.target.value);
+      renderUI();
+    };
+
+    document.getElementById('postgrad-cost').oninput = (e) => {
+      const child = getActiveChild();
+      child.postGradAnnualCostToday = Number(e.target.value);
+      renderUI();
+    };
+
+    document.getElementById('grad-years').onchange = (e) => {
+      const child = getActiveChild();
+      child.gradYears = Number(e.target.value);
+      renderUI();
+    };
+
+    document.getElementById('postgrad-years').onchange = (e) => {
+      const child = getActiveChild();
+      child.postGradYears = Number(e.target.value);
+      renderUI();
+    };
+
+    document.getElementById('scholarship').oninput = (e) => {
+      const child = getActiveChild();
+      child.scholarshipPercent = Number(e.target.value);
+      renderUI();
+    };
+
+    // Financial Inputs
+    document.getElementById('existing-corpus').oninput = (e) => {
+      state.existingCorpus = Number(e.target.value);
+      renderUI();
+    };
+
+    document.getElementById('monthly-sip').oninput = (e) => {
+      state.monthlySIP = Number(e.target.value);
+      renderUI();
+    };
+
+    document.getElementById('sip-simple-btn').onclick = () => {
+      state.sipType = 'simple';
+      renderUI();
+    };
+
+    document.getElementById('sip-stepup-btn').onclick = () => {
+      state.sipType = 'stepup';
+      renderUI();
+    };
+
+    document.getElementById('strat-agg-btn').onclick = () => {
+      state.strategy = 'Aggressive';
+      state.accumulationReturnPercent = 12;
+      renderUI();
+    };
+
+    document.getElementById('strat-cons-btn').onclick = () => {
+      state.strategy = 'Conservative';
+      state.accumulationReturnPercent = 8;
+      renderUI();
+    };
+
+    // Header Controls
+    document.getElementById('currency-select').onchange = (e) => {
+      state.currency = e.target.value;
+      renderUI();
+    };
+
+    document.getElementById('theme-toggle').onclick = () => {
+      isDarkMode = !isDarkMode;
+      updateTheme();
+    };
+
+    // Export HTML / Print Report
+    document.getElementById('export-btn').onclick = () => {
+      window.print();
+    };
+
+    // Initial setup
+    updateTheme();
+    renderUI();
+  </script>
+</body>
+</html>
