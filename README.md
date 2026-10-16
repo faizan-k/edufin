@@ -15,15 +15,9 @@ You do **not** need Node.js or `npm`. This app is completely self-contained and 
 
 ---
 
-## 🌐 How to Host on GitHub Pages (Zero-Build Setup)
+## 🌐 How to use on GitHub Pages
 
-Because `index.html` uses CDN-delivered Tailwind CSS and Chart.js with pure browser JavaScript:
-
-1. Push this entire repository or folder to your GitHub repo.
-2. Go to **Settings** > **Pages** in your GitHub repository.
-3. Under **Branch**, select `main` (or `master`) and `/ (root)`, then click **Save**.
-4. Your planner will be live at `https://<your-username>.github.io/<your-repo-name>/` within seconds!
-
+Go to https://faizan-k.github.io/edufin
 ---
 
 ## 🧪 Unit Testing
